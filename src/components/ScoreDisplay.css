@@ -1,0 +1,29 @@
+.score-display {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.overall-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #0078d7;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+}
+
+.metric span {
+  font-weight: 500;
+} 

@@ -1,0 +1,118 @@
+.photo-uploader {
+  margin: 20px 0;
+}
+
+.photo-uploader h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f9f9f9;
+}
+
+.upload-area:hover {
+  border-color: #0078d7;
+  background-color: #f0f8ff;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+}
+
+.upload-placeholder span:first-child {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.file-count {
+  font-size: 14px;
+  color: #777;
+}
+
+/* New styles for photo thumbnails */
+.selected-photos {
+  margin-top: 20px;
+}
+
+.selected-photos h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.photo-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.photo-thumbnail {
+  position: relative;
+  width: 120px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.photo-thumbnail img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-info {
+  padding: 5px;
+  font-size: 12px;
+  background-color: #f8f8f8;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-info span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #555;
+}
+
+.photo-info span:last-child {
+  font-size: 11px;
+  color: #777;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  color: #ff3b30;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.remove-photo:hover {
+  background-color: #ff3b30;
+  color: white;
+  border-color: #ff3b30;
+} 
