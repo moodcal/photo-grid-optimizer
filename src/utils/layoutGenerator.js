@@ -3019,6 +3019,520 @@ function generateComplexLayouts(photos, pageSize) {
     
     layouts.push(layout2);
     
+    // 新增布局：(3,2,4) - 多行不同列数变体
+    const layout3 = {
+      type: 'composite',
+      name: 'nine-mixed-three-two-four',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 第一行：3列
+    layout3.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[1],
+      x: pageSize.width / 3,
+      y: 0,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[2],
+      x: pageSize.width * 2/3,
+      y: 0,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    // 第二行：2列
+    layout3.cells.push({
+      photo: photos[3],
+      x: 0,
+      y: pageSize.height / 3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[4],
+      x: pageSize.width / 2,
+      y: pageSize.height / 3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    // 第三行：4列
+    layout3.cells.push({
+      photo: photos[5],
+      x: 0,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[6],
+      x: pageSize.width / 4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[7],
+      x: pageSize.width / 2,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout3.cells.push({
+      photo: photos[8],
+      x: pageSize.width * 3/4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layouts.push(layout3);
+    
+    // 新增布局：(4,2,3) - 多行不同列数变体
+    const layout4 = {
+      type: 'composite',
+      name: 'nine-mixed-four-two-three',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 第一行：4列
+    layout4.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[1],
+      x: pageSize.width / 4,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[2],
+      x: pageSize.width / 2,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[3],
+      x: pageSize.width * 3/4,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    // 第二行：2列
+    layout4.cells.push({
+      photo: photos[4],
+      x: 0,
+      y: pageSize.height / 3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[5],
+      x: pageSize.width / 2,
+      y: pageSize.height / 3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    // 第三行：3列
+    layout4.cells.push({
+      photo: photos[6],
+      x: 0,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[7],
+      x: pageSize.width / 3,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout4.cells.push({
+      photo: photos[8],
+      x: pageSize.width * 2/3,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layouts.push(layout4);
+    
+    // 新增布局：(1,4,4) - 顶部大图变体
+    const layout5 = {
+      type: 'composite',
+      name: 'nine-mixed-one-four-four',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 第一行：1列（大图）
+    layout5.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: pageSize.width,
+      height: pageSize.height / 3
+    });
+    
+    // 第二行：4列
+    layout5.cells.push({
+      photo: photos[1],
+      x: 0,
+      y: pageSize.height / 3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[2],
+      x: pageSize.width / 4,
+      y: pageSize.height / 3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[3],
+      x: pageSize.width / 2,
+      y: pageSize.height / 3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[4],
+      x: pageSize.width * 3/4,
+      y: pageSize.height / 3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    // 第三行：4列
+    layout5.cells.push({
+      photo: photos[5],
+      x: 0,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[6],
+      x: pageSize.width / 4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[7],
+      x: pageSize.width / 2,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout5.cells.push({
+      photo: photos[8],
+      x: pageSize.width * 3/4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layouts.push(layout5);
+    
+    // 新增布局：(3x3) - 中心大图变体
+    const layout6 = {
+      type: 'composite',
+      name: 'nine-mixed-center-dominant',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 外围8张小图，中心1张大图
+    const cellSize = pageSize.width / 3;
+    
+    // 上排三张
+    layout6.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layout6.cells.push({
+      photo: photos[1],
+      x: cellSize,
+      y: 0,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layout6.cells.push({
+      photo: photos[2],
+      x: cellSize * 2,
+      y: 0,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    // 中排左右两张
+    layout6.cells.push({
+      photo: photos[3],
+      x: 0,
+      y: cellSize,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    // 中心大图
+    layout6.cells.push({
+      photo: photos[4],
+      x: cellSize,
+      y: cellSize,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layout6.cells.push({
+      photo: photos[5],
+      x: cellSize * 2,
+      y: cellSize,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    // 下排三张
+    layout6.cells.push({
+      photo: photos[6],
+      x: 0,
+      y: cellSize * 2,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layout6.cells.push({
+      photo: photos[7],
+      x: cellSize,
+      y: cellSize * 2,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layout6.cells.push({
+      photo: photos[8],
+      x: cellSize * 2,
+      y: cellSize * 2,
+      width: cellSize,
+      height: cellSize
+    });
+    
+    layouts.push(layout6);
+    
+    // 新增布局：(2+3+4) - 逐行增加列数
+    const layout7 = {
+      type: 'composite',
+      name: 'nine-mixed-two-three-four',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 第一行：2列
+    layout7.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[1],
+      x: pageSize.width / 2,
+      y: 0,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    // 第二行：3列
+    layout7.cells.push({
+      photo: photos[2],
+      x: 0,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[3],
+      x: pageSize.width / 3,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[4],
+      x: pageSize.width * 2/3,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    // 第三行：4列
+    layout7.cells.push({
+      photo: photos[5],
+      x: 0,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[6],
+      x: pageSize.width / 4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[7],
+      x: pageSize.width / 2,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout7.cells.push({
+      photo: photos[8],
+      x: pageSize.width * 3/4,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layouts.push(layout7);
+    
+    // 新增布局：(4+3+2) - 逐行减少列数
+    const layout8 = {
+      type: 'composite',
+      name: 'nine-mixed-four-three-two',
+      photos: [...photos],
+      cells: []
+    };
+    
+    // 第一行：4列
+    layout8.cells.push({
+      photo: photos[0],
+      x: 0,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[1],
+      x: pageSize.width / 4,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[2],
+      x: pageSize.width / 2,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[3],
+      x: pageSize.width * 3/4,
+      y: 0,
+      width: pageSize.width / 4,
+      height: pageSize.height / 3
+    });
+    
+    // 第二行：3列
+    layout8.cells.push({
+      photo: photos[4],
+      x: 0,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[5],
+      x: pageSize.width / 3,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[6],
+      x: pageSize.width * 2/3,
+      y: pageSize.height / 3,
+      width: pageSize.width / 3,
+      height: pageSize.height / 3
+    });
+    
+    // 第三行：2列
+    layout8.cells.push({
+      photo: photos[7],
+      x: 0,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    layout8.cells.push({
+      photo: photos[8],
+      x: pageSize.width / 2,
+      y: pageSize.height * 2/3,
+      width: pageSize.width / 2,
+      height: pageSize.height / 3
+    });
+    
+    layouts.push(layout8);
+    
     // 为每个布局创建优化版本
     layouts.forEach(layout => {
       const cells = [...layout.cells];
