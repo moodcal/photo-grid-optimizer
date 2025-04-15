@@ -12,7 +12,12 @@ function App() {
   const handlePhotosUploaded = (uploadedPhotos) => {
     setPhotos(uploadedPhotos);
     // Generate layouts and update state
-    const generatedLayouts = generateLayouts(uploadedPhotos, pageSize);
+    const sortedPhotos = [...uploadedPhotos].sort((a, b) => {
+      const aRatio = a.width / a.height;
+      const bRatio = b.width / b.height;
+      return bRatio - aRatio; // 横向照片优先
+    });
+    const generatedLayouts = generateLayouts(sortedPhotos, pageSize);
     setLayouts(generatedLayouts);
   };
 
@@ -20,7 +25,12 @@ function App() {
     setPageSize(newSize);
     // Regenerate layouts when page size changes if photos exist
     if (photos.length > 0) {
-      const generatedLayouts = generateLayouts(photos, newSize);
+      const sortedPhotos = [...photos].sort((a, b) => {
+        const aRatio = a.width / a.height;
+        const bRatio = b.width / b.height;
+        return bRatio - aRatio; // 横向照片优先
+      });
+      const generatedLayouts = generateLayouts(sortedPhotos, newSize);
       setLayouts(generatedLayouts);
     }
   };
