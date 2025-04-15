@@ -5,58 +5,206 @@ import './LayoutGrid.css';
 
 function LayoutGrid({ layouts, pageSize }) {
   const [uniqueLayouts, setUniqueLayouts] = useState([]);
+  const [displayLayouts, setDisplayLayouts] = useState([]);
+  const [filter, setFilter] = useState('unique'); // 'all', 'unique', 'optimized', 'grid', 'split', 'composite'
+  const [numColumns, setNumColumns] = useState(4);
+  const [structureGroups, setStructureGroups] = useState({});
+  
+  useEffect(() => {
+    // 计算合适的列数
+    const updateColumnCount = () => {
+      const width = window.innerWidth;
+      if (width > 1600) setNumColumns(4);
+      else if (width > 1200) setNumColumns(4);
+      else if (width > 900) setNumColumns(3);
+      else if (width > 600) setNumColumns(2);
+      else if (width > 480) setNumColumns(1);
+      else setNumColumns(1);
+    };
+    
+    updateColumnCount();
+    window.addEventListener('resize', updateColumnCount);
+    return () => window.removeEventListener('resize', updateColumnCount);
+  }, []);
   
   useEffect(() => {
     // Find and mark duplicate layouts
     const layoutMap = new Map();
+    const structureGroupMap = {}; // 保存结构相同的布局组
+    
     const processed = layouts.map((layout, index) => {
       // Create a unique identifier based on layout properties
       const layoutKey = generateLayoutKey(layout);
       
+      // 添加到结构组
+      if (!structureGroupMap[layoutKey]) {
+        structureGroupMap[layoutKey] = {
+          structures: [],
+          bestScore: -1,
+          bestIndex: -1
+        };
+      }
+      
+      // 存储该结构的所有布局
+      structureGroupMap[layoutKey].structures.push(index);
+      
+      // 记录最高分的布局
+      const score = layout.score || 0;
+      if (score > structureGroupMap[layoutKey].bestScore) {
+        structureGroupMap[layoutKey].bestScore = score;
+        structureGroupMap[layoutKey].bestIndex = index;
+      }
+      
       if (layoutMap.has(layoutKey)) {
         // If we've seen this layout before, mark it as duplicate
-        return { ...layout, isDuplicate: true, duplicateOf: layoutMap.get(layoutKey), originalIndex: index };
+        return { 
+          ...layout, 
+          isDuplicate: true, 
+          duplicateOf: layoutMap.get(layoutKey), 
+          originalIndex: index,
+          structureGroup: layoutKey
+        };
       } else {
         // Otherwise, record this as the first occurrence
         layoutMap.set(layoutKey, index);
-        return { ...layout, isDuplicate: false, originalIndex: index };
+        return { 
+          ...layout, 
+          isDuplicate: false, 
+          originalIndex: index,
+          structureGroup: layoutKey
+        };
       }
     });
     
+    setStructureGroups(structureGroupMap);
     setUniqueLayouts(processed);
   }, [layouts]);
   
+  useEffect(() => {
+    let filtered;
+    
+    // 根据过滤条件更新显示的布局
+    if (filter === 'all') {
+      filtered = uniqueLayouts;
+    } else if (filter === 'unique') {
+      // 对于unique过滤，只显示每个结构组的最佳布局
+      const bestLayouts = new Set();
+      Object.values(structureGroups).forEach(group => {
+        if (group.bestIndex !== -1) {
+          bestLayouts.add(group.bestIndex);
+        }
+      });
+      
+      filtered = uniqueLayouts.filter(layout => 
+        bestLayouts.has(layout.originalIndex)
+      );
+    } else if (filter === 'optimized') {
+      filtered = uniqueLayouts.filter(layout => layout.type === 'optimized');
+    } else if (filter === 'grid') {
+      filtered = uniqueLayouts.filter(layout => 
+        layout.type === 'grid' || 
+        (layout.name && layout.name.startsWith('grid-'))
+      );
+    } else if (filter === 'split') {
+      filtered = uniqueLayouts.filter(layout => 
+        layout.type === 'split' || 
+        (layout.name && (layout.name.startsWith('hsplit-') || layout.name.startsWith('vsplit-')))
+      );
+    } else if (filter === 'composite') {
+      filtered = uniqueLayouts.filter(layout => layout.type === 'composite');
+    }
+    
+    // 按分数排序，同时在相同结构中尽可能显示最佳布局
+    filtered.sort((a, b) => {
+      // 对于相同结构的布局，按分数排序
+      if (a.structureGroup === b.structureGroup) {
+        return (b.score || 0) - (a.score || 0);
+      }
+      return (b.score || 0) - (a.score || 0);
+    });
+    
+    setDisplayLayouts(filtered);
+  }, [uniqueLayouts, filter, structureGroups]);
+  
   // Generate a unique key for a layout based on its configuration
   const generateLayoutKey = (layout) => {
-    if (layout.type === 'hstack') {
-      if (layout.mixedRows) {
-        return `hstack_mixed_${layout.rowDistribution.join('_')}`;
-      }
-      return `hstack_${layout.rows}_${layout.photosPerRow}`;
-    } else if (layout.type === 'vstack') {
-      if (layout.variableHeights) {
-        return `vstack_variable_${layout.photosPerColumn.join('_')}`;
-      }
-      return `vstack_${layout.columns}_${layout.photosPerColumn}`;
-    } else if (layout.type === 'nested' || layout.type === 'composite') {
-      // For nested layouts, create a key based on cell positions
-      const cellsKey = layout.cells
-        .map(cell => `${cell.x / pageSize.width}_${cell.y / pageSize.height}_${cell.width / pageSize.width}_${cell.height / pageSize.height}`)
-        .sort()
-        .join('|');
-      return `${layout.type}_${layout.name || cellsKey}`;
+    // 如果没有单元格，无法进行结构比较
+    if (!layout || !layout.cells || layout.cells.length === 0) {
+      return `${layout.type || 'unknown'}_${layout.name || 'unnamed'}_${Date.now()}`;
     }
-    return 'unknown';
+    
+    // 按位置排序单元格
+    const sortedCells = [...layout.cells].sort((a, b) => {
+      if (a.y !== b.y) return a.y - b.y;
+      return a.x - b.x;
+    });
+    
+    // 计算页面尺寸
+    let maxX = 0, maxY = 0;
+    sortedCells.forEach(cell => {
+      maxX = Math.max(maxX, cell.x + cell.width);
+      maxY = Math.max(maxY, cell.y + cell.height);
+    });
+    
+    // 计算基于单元格几何形状的签名
+    // 这里我们关注的是结构而不是名称
+    let structureKey = '';
+    
+    // 首先添加单元格数量，这是最基本的区分
+    structureKey += `cells_${sortedCells.length}_`;
+    
+    // 标准化单元格尺寸和位置
+    const normalizedCells = sortedCells.map(cell => {
+      return {
+        x: Math.round((cell.x / maxX) * 1000) / 1000,
+        y: Math.round((cell.y / maxY) * 1000) / 1000,
+        width: Math.round((cell.width / maxX) * 1000) / 1000,
+        height: Math.round((cell.height / maxY) * 1000) / 1000
+      };
+    });
+    
+    // 按位置和大小排序标准化后的单元格，确保相同结构但不同排列顺序的布局被识别为相同
+    normalizedCells.sort((a, b) => {
+      if (a.y !== b.y) return a.y - b.y;
+      if (a.x !== b.x) return a.x - b.x;
+      if (a.width !== b.width) return a.width - b.width;
+      return a.height - b.height;
+    });
+    
+    // 生成最终的结构键
+    normalizedCells.forEach(cell => {
+      structureKey += `[${cell.x},${cell.y},${cell.width},${cell.height}]`;
+    });
+    
+    return structureKey;
   };
-  
+
+  // 获取结构组信息
+  const getStructureGroupInfo = (layout) => {
+    if (!layout || !layout.structureGroup || !structureGroups[layout.structureGroup]) {
+      return null;
+    }
+    
+    const group = structureGroups[layout.structureGroup];
+    const variantCount = group.structures.length;
+    const isBest = layout.originalIndex === group.bestIndex;
+    
+    return { variantCount, isBest };
+  };
+
   // Generate a visual representation of the layout structure
   const generateLayoutStructure = (layout) => {
-    if (layout.type === 'hstack') {
-      // For regular grid layouts
-      if (!layout.mixedRows) {
-        // Create a visual grid representation for horizontal stack
-        const rows = layout.rows;
-        const cols = layout.photosPerRow;
+    if (!layout || !layout.type) {
+      return <div className="layout-structure">Unknown layout structure</div>;
+    }
+    
+    // 处理网格布局
+    if (layout.type === 'grid') {
+      const match = layout.name.match(/grid-(\d+)x(\d+)/);
+      if (match) {
+        const rows = parseInt(match[1]);
+        const cols = parseInt(match[2]);
+        
         return (
           <div className="layout-structure">
             <div className="structure-title">Structure:</div>
@@ -66,160 +214,116 @@ function LayoutGrid({ layouts, pageSize }) {
               ))}
             </div>
             <div className="structure-desc">
-              {rows} row{rows !== 1 ? 's' : ''} × {cols} photo{cols !== 1 ? 's' : ''} per row
-            </div>
-          </div>
-        );
-      } else {
-        // Mixed row distribution (uneven rows)
-        const rows = layout.rows;
-        const rowDistribution = layout.rowDistribution;
-        
-        return (
-          <div className="layout-structure">
-            <div className="structure-title">Mixed Row Structure:</div>
-            <div className="mixed-structure-grid">
-              {rowDistribution.map((photosInRow, rowIndex) => (
-                <div key={rowIndex} className="mixed-row" style={{height: `${100 / rows}%`}}>
-                  {Array.from({length: photosInRow}).map((_, colIndex) => {
-                    // Calculate the photo number
-                    let photoNum = 0;
-                    for (let r = 0; r < rowIndex; r++) {
-                      photoNum += rowDistribution[r];
-                    }
-                    photoNum += colIndex + 1;
-                    
-                    return (
-                      <div 
-                        key={colIndex} 
-                        className="grid-cell" 
-                        style={{width: `${100 / photosInRow}%`}}
-                      >
-                        {photoNum}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-            <div className="structure-desc">
-              {rowDistribution.join(' + ')} photos per row
+              {rows} row{rows !== 1 ? 's' : ''} × {cols} column{cols !== 1 ? 's' : ''}
             </div>
           </div>
         );
       }
-    } else if (layout.type === 'vstack') {
-      if (!layout.variableHeights) {
-        // Regular vertical stack with equal heights
-        const rows = layout.photosPerColumn;
-        const cols = layout.columns;
-        return (
-          <div className="layout-structure">
-            <div className="structure-title">Structure:</div>
-            <div className="structure-grid" style={{gridTemplateRows: `repeat(${rows}, 1fr)`, gridTemplateColumns: `repeat(${cols}, 1fr)`}}>
-              {Array.from({length: rows * cols}).map((_, i) => {
-                // Calculate the correct photo number based on column-first order
-                const col = Math.floor(i / rows);
-                const row = i % rows;
-                const photoNum = col * rows + row + 1;
-                return <div key={i} className="grid-cell">{photoNum}</div>;
-              })}
-            </div>
-            <div className="structure-desc">
-              {cols} column{cols !== 1 ? 's' : ''} × {rows} photo{rows !== 1 ? 's' : ''} per column
-            </div>
-          </div>
-        );
-      } else {
-        // Variable height columns
-        const cols = layout.columns;
-        const colDistribution = layout.photosPerColumn;
-        
-        return (
-          <div className="layout-structure">
-            <div className="structure-title">Variable Column Structure:</div>
-            <div className="variable-column-grid">
-              {colDistribution.map((photosInCol, colIndex) => (
-                <div key={colIndex} className="var-column" style={{width: `${100 / cols}%`}}>
-                  {Array.from({length: photosInCol}).map((_, rowIndex) => {
-                    // Calculate the photo number
-                    let photoNum = 0;
-                    for (let c = 0; c < colIndex; c++) {
-                      photoNum += colDistribution[c];
-                    }
-                    photoNum += rowIndex + 1;
-                    
-                    return (
-                      <div 
-                        key={rowIndex} 
-                        className="grid-cell" 
-                        style={{height: `${100 / photosInCol}%`}}
-                      >
-                        {photoNum}
-                      </div>
-                    );
-                  })}
+    }
+    
+    // 处理分割布局
+    if (layout.type === 'split') {
+      if (layout.name.startsWith('hsplit')) {
+        const parts = layout.name.split('-');
+        if (parts.length === 3) {
+          const topCount = parseInt(parts[1]);
+          const bottomCount = parseInt(parts[2]);
+          
+          return (
+            <div className="layout-structure">
+              <div className="structure-title">Structure:</div>
+              <div className="structure-grid" style={{display: 'flex', flexDirection: 'column'}}>
+                <div style={{display: 'flex', flex: 1}}>
+                  {Array.from({length: topCount}).map((_, i) => (
+                    <div key={i} className="grid-cell" style={{flex: 1}}>{i + 1}</div>
+                  ))}
                 </div>
-              ))}
+                <div style={{display: 'flex', flex: 1}}>
+                  {Array.from({length: bottomCount}).map((_, i) => (
+                    <div key={i} className="grid-cell" style={{flex: 1}}>{i + topCount + 1}</div>
+                  ))}
+                </div>
+              </div>
+              <div className="structure-desc">
+                Horizontal Split: {topCount} top + {bottomCount} bottom
+              </div>
             </div>
-            <div className="structure-desc">
-              {colDistribution.join(' + ')} photos per column
+          );
+        }
+      } else if (layout.name.startsWith('vsplit')) {
+        const parts = layout.name.split('-');
+        if (parts.length === 3) {
+          const leftCount = parseInt(parts[1]);
+          const rightCount = parseInt(parts[2]);
+          
+          return (
+            <div className="layout-structure">
+              <div className="structure-title">Structure:</div>
+              <div className="structure-grid" style={{display: 'flex'}}>
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  {Array.from({length: leftCount}).map((_, i) => (
+                    <div key={i} className="grid-cell" style={{flex: 1}}>{i + 1}</div>
+                  ))}
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  {Array.from({length: rightCount}).map((_, i) => (
+                    <div key={i} className="grid-cell" style={{flex: 1}}>{i + leftCount + 1}</div>
+                  ))}
+                </div>
+              </div>
+              <div className="structure-desc">
+                Vertical Split: {leftCount} left + {rightCount} right
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
       }
-    } else if (layout.type === 'nested' || layout.type === 'composite') {
-      // For nested layouts, show a more detailed visualization
-      // Clone and sort cells by position for consistent display
-      const sortedCells = [...layout.cells].sort((a, b) => {
-        // Sort by y first (top to bottom), then by x (left to right)
+    }
+    
+    // 处理复合和优化布局
+    if (layout.type === 'composite' || layout.type === 'optimized') {
+      // 获取布局单元格
+      const cells = layout.cells || [];
+      if (cells.length === 0) {
+        return <div className="layout-structure">Empty layout</div>;
+      }
+      
+      // 按位置排序单元格
+      const sortedCells = [...cells].sort((a, b) => {
         if (a.y !== b.y) return a.y - b.y;
         return a.x - b.x;
       });
       
-      // Find the structure type
-      let structureDesc = "Custom nested layout";
+      // 获取页面尺寸或估计页面尺寸
+      let pageWidth = 0;
+      let pageHeight = 0;
       
-      if (layout.name) {
-        // Use the named layout if available
-        switch (layout.name) {
-          case 'left-dominant':
-            structureDesc = "Left dominant: 1 large photo + " + (sortedCells.length - 1) + " stacked on right";
-            break;
-          case 'right-dominant':
-            structureDesc = "Right dominant: " + (sortedCells.length - 1) + " stacked on left + 1 large photo";
-            break;
-          case 'top-dominant':
-            structureDesc = "Top dominant: 1 large photo above + " + (sortedCells.length - 1) + " in row below";
-            break;
-          case 'bottom-dominant':
-            structureDesc = "Bottom dominant: " + (sortedCells.length - 1) + " in row above + 1 large photo below";
-            break;
-          case 'center-dominant':
-            structureDesc = "Center dominant: Large center photo with photos in corners";
-            break;
-          case 'split-grid':
-            structureDesc = "Split grid: 2×2 small grid + 1 large photo";
-            break;
-          case 'mixed-stack-1':
-            structureDesc = "2 photos on top, 1 below with 2 stacked on right";
-            break;
-          case 'mixed-stack-2':
-            structureDesc = "2 photos on left, 3 stacked on right";
-            break;
-          case 'mixed-stack-3':
-            structureDesc = "Full width photo top & bottom, 3 in middle";
-            break;
-          default:
-            structureDesc = layout.name;
-        }
-      } else if (sortedCells.length > 1) {
-        const firstCell = sortedCells[0];
-        if (firstCell.width > pageSize.width / 2 && firstCell.height === pageSize.height) {
-          structureDesc = "1 large photo on left + " + (sortedCells.length - 1) + " stacked on right";
-        } else if (firstCell.width === pageSize.width && firstCell.height > pageSize.height / 2) {
-          structureDesc = "1 large photo on top + " + (sortedCells.length - 1) + " in row below";
-        }
+      cells.forEach(cell => {
+        pageWidth = Math.max(pageWidth, cell.x + cell.width);
+        pageHeight = Math.max(pageHeight, cell.y + cell.height);
+      });
+      
+      // 确定布局结构描述
+      let structureDesc = '';
+      switch(layout.name) {
+        case 'left-one-right-two':
+          structureDesc = "Left 1, Right 2 layout";
+          break;
+        case 'left-two-right-one':
+          structureDesc = "Left 2, Right 1 layout";
+          break;
+        case 'three-three-one':
+          structureDesc = "3-3-1 Layout";
+          break;
+        case 'two-three-two':
+          structureDesc = "2-3-2 Layout";
+          break;
+        default:
+          if (layout.type === 'optimized') {
+            structureDesc = "Optimized: " + layout.name.replace('-optimized', '');
+          } else {
+            structureDesc = layout.name || "Custom layout";
+          }
       }
       
       return (
@@ -228,10 +332,10 @@ function LayoutGrid({ layouts, pageSize }) {
           <div className="nested-grid">
             {sortedCells.map((cell, i) => {
               const cellStyle = {
-                left: `${(cell.x / pageSize.width) * 100}%`,
-                top: `${(cell.y / pageSize.height) * 100}%`,
-                width: `${(cell.width / pageSize.width) * 100}%`,
-                height: `${(cell.height / pageSize.height) * 100}%`,
+                left: `${(cell.x / pageWidth) * 100}%`,
+                top: `${(cell.y / pageHeight) * 100}%`,
+                width: `${(cell.width / pageWidth) * 100}%`,
+                height: `${(cell.height / pageHeight) * 100}%`,
               };
               return (
                 <div key={i} className="nested-cell" style={cellStyle}>
@@ -245,39 +349,105 @@ function LayoutGrid({ layouts, pageSize }) {
       );
     }
     
+    // 默认情况
     return <div className="layout-structure">Unknown layout structure</div>;
+  };
+
+  // 获取布局类型显示名称
+  const getLayoutTypeDisplay = (layout) => {
+    if (!layout || !layout.type) return 'Unknown';
+    
+    if (layout.type === 'grid') {
+      return 'Grid Layout';
+    } else if (layout.type === 'split') {
+      if (layout.name.startsWith('hsplit')) {
+        return 'Horizontal Split';
+      } else if (layout.name.startsWith('vsplit')) {
+        return 'Vertical Split';
+      }
+      return 'Split Layout';
+    } else if (layout.type === 'composite') {
+      return 'Composite Layout';
+    } else if (layout.type === 'optimized') {
+      if (layout.name.includes('grid')) {
+        return 'Optimized Grid';
+      } else if (layout.name.includes('hsplit')) {
+        return 'Optimized H-Split';
+      } else if (layout.name.includes('vsplit')) {
+        return 'Optimized V-Split';
+      } else if (layout.name.includes('left-one')) {
+        return 'Opt: Left 1, Right 2';
+      } else if (layout.name.includes('left-two')) {
+        return 'Opt: Left 2, Right 1';
+      }
+      return 'Optimized Layout';
+    }
+    
+    return layout.type.charAt(0).toUpperCase() + layout.type.slice(1);
+  };
+
+  // 获取唯一结构数
+  const getUniqueStructureCount = () => {
+    return Object.keys(structureGroups).length;
   };
 
   return (
     <div className="layout-grid">
-      <h2>Generated Layouts ({uniqueLayouts.filter(l => !l.isDuplicate).length} unique of {layouts.length} total)</h2>
-      <div className="layouts-container">
-        {uniqueLayouts.map((layout) => (
-          <div 
-            key={layout.originalIndex} 
-            className={`layout-item ${layout.isDuplicate ? 'duplicate-layout' : ''}`}
-          >
-            <div className="layout-header">
-              <div className="layout-number">#{layout.originalIndex + 1}</div>
-              {layout.isDuplicate && (
-                <div className="duplicate-badge">
-                  Duplicate of #{layout.duplicateOf + 1}
+      <div className="layout-header-controls">
+        <h2>Generated Layouts ({getUniqueStructureCount()} unique structures, {layouts.length} total)</h2>
+        <div className="filter-controls">
+          <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>All Variants</button>
+          <button className={filter === 'unique' ? 'active' : ''} onClick={() => setFilter('unique')}>Unique Only</button>
+          <button className={filter === 'grid' ? 'active' : ''} onClick={() => setFilter('grid')}>Grid</button>
+          <button className={filter === 'split' ? 'active' : ''} onClick={() => setFilter('split')}>Split</button>
+          <button className={filter === 'composite' ? 'active' : ''} onClick={() => setFilter('composite')}>Composite</button>
+          <button className={filter === 'optimized' ? 'active' : ''} onClick={() => setFilter('optimized')}>Optimized</button>
+        </div>
+      </div>
+      
+      <div className="layouts-container" style={{gridTemplateColumns: `repeat(${numColumns}, 1fr)`}}>
+        {displayLayouts.map((layout) => {
+          const groupInfo = getStructureGroupInfo(layout);
+          const isBestInGroup = groupInfo && groupInfo.isBest;
+          const variantCount = groupInfo ? groupInfo.variantCount : 1;
+          const hasSimilar = variantCount > 1;
+          
+          return (
+            <div 
+              key={layout.originalIndex} 
+              className={`layout-item ${layout.isDuplicate ? 'duplicate-layout' : ''} ${isBestInGroup ? 'best-layout' : ''}`}
+            >
+              <div className="layout-header">
+                <div className="layout-number">#{layout.originalIndex + 1}</div>
+                <div className="layout-badges">
+                  {hasSimilar && (
+                    <div className="similar-badge" title="There are similar layouts with the same structure">
+                      {variantCount} variants
+                    </div>
+                  )}
+                  {isBestInGroup && hasSimilar && (
+                    <div className="best-badge" title="This is the highest-scoring layout in this structure group">
+                      Best Variant
+                    </div>
+                  )}
+                  {layout.isDuplicate && (
+                    <div className="duplicate-badge">
+                      Duplicate of #{layout.duplicateOf + 1}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <LayoutPreview layout={layout} pageSize={pageSize} />
-            <div className="layout-info">
-              <div className="layout-type">
-                {layout.type === 'hstack' && (layout.mixedRows ? 'Mixed Row Layout' : 'Horizontal Stack Layout')}
-                {layout.type === 'vstack' && (layout.variableHeights ? 'Variable Height Columns' : 'Vertical Stack Layout')}
-                {layout.type === 'nested' && 'Nested Layout'}
-                {layout.type === 'composite' && 'Composite Layout'}
               </div>
-              {generateLayoutStructure(layout)}
+              <LayoutPreview layout={layout} pageSize={pageSize} />
+              <div className="layout-info">
+                <div className="layout-type">
+                  {getLayoutTypeDisplay(layout)}
+                </div>
+                {generateLayoutStructure(layout)}
+              </div>
+              <ScoreDisplay layout={layout} />
             </div>
-            <ScoreDisplay layout={layout} />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
